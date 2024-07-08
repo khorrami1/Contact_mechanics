@@ -4,17 +4,19 @@ using SparseArrays
 grid = Grid([Line((1,2)), Line((3,4))], [Node{1, Float64}(Vec((0.))), Node{1, Float64}(Vec((1.))),
                                          Node{1, Float64}(Vec((0.98))), Node{1, Float64}(Vec((2.)))])
 
-dh = DofHandler(grid)
 
-add!(dh, :u, 1)
+ip = Lagrange{RefLine, 1}()
+qr = QuadratureRule{RefLine}(1) 
+
+dh = DofHandler(grid)
+add!(dh, :u, ip)
+
 close!(dh)
 
-ip = Lagrange{1, RefCube, 1}()
-qr = QuadratureRule{1, RefCube}(1) 
 
 cv = CellValues(qr, ip, ip)
 
-K = create_sparsity_pattern(dh)
+K = allocate_matrix(dh)
 
 ch = ConstraintHandler(dh);
 
@@ -89,13 +91,13 @@ end
 
 update!(ch, 0.0)
 
-K = create_sparsity_pattern(dh, ch)
+K = allocate_matrix(dh, ch)
 
 K, f = assemble_global(cv, K, dh)
 K_orig = deepcopy(K)
 u = zeros(ndofs(dh))
 
-kn = 1e10
+kn = 1e2
 K[2,2] += kn
 K[2,3] -= kn
 K[3,3] += kn
